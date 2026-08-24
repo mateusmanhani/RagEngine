@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RagEngine.Domain\RagEngine.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
