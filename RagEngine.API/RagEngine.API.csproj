@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RagEngine.Application\RagEngine.Application.csproj" />
+    <ProjectReference Include="..\RagEngine.Infrastructure\RagEngine.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-﻿namespace RagEngine.Application
+﻿namespace RagEngine.Application.Interfaces
 {
     public interface IEmbeddingService
     {

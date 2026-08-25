@@ -26,6 +26,7 @@ The goal is not simply to produce working code. Help the user understand why the
 * Explain unfamiliar C# or .NET features when introducing them.
 * Clearly distinguish pragmatic POC architecture from production requirements.
 * Do not optimize for the fewest lines of code. Optimize for the user's understanding.
+* When the user asks for code guidance and is stuck, provide the requested minimal code instead of only narrating intended actions; acknowledge and correct omissions directly.
 
 ---
 

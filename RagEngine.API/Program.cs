@@ -1,4 +1,8 @@
 
+using Microsoft.Extensions.Options;
+using RagEngine.Application.Interfaces;
+using RagEngine.Infrastructure.Embedding;
+
 namespace RagEngine
 {
     public class Program
@@ -8,6 +12,17 @@ namespace RagEngine
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Services.Configure<OllamaOptions>(
+                builder.Configuration.GetSection("Ollama"));
+
+            builder.Services.AddHttpClient<IEmbeddingService, OllamaEmbeddingService> (
+                (serviceProvider, httpClient) =>
+            {
+                var options = serviceProvider
+                .GetRequiredService<IOptions<OllamaOptions>>().Value;
+
+                httpClient.BaseAddress = new Uri(options.BaseUrl);
+            });
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
