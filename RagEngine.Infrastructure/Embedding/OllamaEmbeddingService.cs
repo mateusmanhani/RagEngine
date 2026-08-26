@@ -18,7 +18,7 @@ namespace RagEngine.Infrastructure.Embedding
             _ollamaOptions = ollamaOptions;
         }
 
-        public async Task<float[]> GetEmbeddingAsync(string input, CancellationToken cancellationToken = default)
+        public async Task<float[]> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken = default)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(input);
 

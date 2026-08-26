@@ -2,6 +2,6 @@
 {
     public interface IEmbeddingService
     {
-        Task<float[]> GetEmbeddingAsync(string input, CancellationToken cancellationToken = default);
+        Task<float[]> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken = default);
     }
 }

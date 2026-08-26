@@ -15,4 +15,8 @@
     <ProjectReference Include="..\RagEngine.Application\RagEngine.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DataIngestion\" />
+  </ItemGroup>
+
 </Project>
