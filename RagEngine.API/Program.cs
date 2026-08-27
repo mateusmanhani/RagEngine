@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using RagEngine.Application.Interfaces;
 using RagEngine.Infrastructure.DocumentIngestion;
 using RagEngine.Infrastructure.Embedding;
+using RagEngine.Infrastructure.VectorStore;
 
 namespace RagEngine
 {
@@ -27,6 +28,10 @@ namespace RagEngine
 
             builder.Services.Configure<ChunkingOptions>(builder.Configuration.GetSection("Chunking"));
             builder.Services.AddScoped<IChunker, SemanticKernelChunker>();
+
+            builder.Services.AddScoped<IDocumentLoader, DocumentLoader>();
+
+            builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

@@ -22,12 +22,25 @@ namespace RagEngine.Infrastructure.Embedding
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(input);
 
+            var embeddings = await GenerateEmbeddingsAsync([input], cancellationToken);
+            return embeddings[0];
+        }
+
+        public async Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IReadOnlyList<string> inputs, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(inputs);
+
+            if (inputs.Count == 0)
+            {
+                throw new ArgumentException("At least one input is required.", nameof(inputs));
+            }
+
             var options = _ollamaOptions.Value;
 
             var request = new EmbedRequest
             {
                 Model = options.EmbeddingModel,
-                Input = input
+                Input = inputs.ToArray()
             };
 
             using var response = await _httpClient.PostAsJsonAsync(options.EmbeddingEndpoint, request, cancellationToken);
@@ -51,20 +64,22 @@ namespace RagEngine.Infrastructure.Embedding
                 throw new HttpRequestException("Ollama returned an empty embedding response.");
             }
 
-            if (responseData.Embeddings is null || responseData.Embeddings.Length == 0)
+            if (responseData.Embeddings is null || responseData.Embeddings.Length != inputs.Count)
             {
-                throw new HttpRequestException("Ollama returned an empty embeddings array.");
+                throw new HttpRequestException(
+                    $"Ollama returned {responseData.Embeddings?.Length ?? 0} embeddings, expected {inputs.Count}."
+                );
             }
 
-            var embedding = responseData.Embeddings[0];
-
-            if (embedding is null || embedding.Length != options.EmbeddingDimensions)
+            foreach (var embedding in responseData.Embeddings)
             {
-                throw new HttpRequestException($"Ollama returned an embedding of unexpected length: {embedding?.Length ?? 0}. Expected length is {options.EmbeddingDimensions}.");
+                if (embedding is null || embedding.Length != options.EmbeddingDimensions)
+                {
+                    throw new HttpRequestException($"Ollama returned an embedding of unexpected length: {embedding?.Length ?? 0}. Expected length is {options.EmbeddingDimensions}.");
+                }
             }
 
-            return embedding;
-
+            return responseData.Embeddings;
         }
 
     }
