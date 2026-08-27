@@ -4,6 +4,6 @@
         string Id,
         string DocumentId,
         int ChunkIndex,
-        string content,
+        string Content,
         float[]? Embedding = null);
 }

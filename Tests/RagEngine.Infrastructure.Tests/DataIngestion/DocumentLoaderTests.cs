@@ -2,14 +2,14 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagEngine.Infrastructure.DocumentIngestion;
 
-namespace RagEngine.Infrastructure.Tests
+namespace RagEngine.Infrastructure.Tests.DataIngestion
 {
-    public class DocumentLoadServiceTest : IDisposable
+    public class DocumentLoaderTests : IDisposable
     {
         private readonly string _tempFolder;
         private readonly DocumentLoader _sut; //system under test
         
-        public DocumentLoadServiceTest()
+        public DocumentLoaderTests()
         {
             _tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_tempFolder);

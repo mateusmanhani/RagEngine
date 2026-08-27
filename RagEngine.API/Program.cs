@@ -1,6 +1,7 @@
 
 using Microsoft.Extensions.Options;
 using RagEngine.Application.Interfaces;
+using RagEngine.Infrastructure.DocumentIngestion;
 using RagEngine.Infrastructure.Embedding;
 
 namespace RagEngine
@@ -23,6 +24,9 @@ namespace RagEngine
 
                 httpClient.BaseAddress = new Uri(options.BaseUrl);
             });
+
+            builder.Services.Configure<ChunkingOptions>(builder.Configuration.GetSection("Chunking"));
+            builder.Services.AddScoped<IChunker, SemanticKernelChunker>();
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
