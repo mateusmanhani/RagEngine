@@ -1,6 +1,6 @@
 ﻿namespace RagEngine.Application.Interfaces
 {
-    public interface IEmbeddingService
+    public interface IEmbeddingGenerator
     {
         Task<float[]> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken = default);
     }

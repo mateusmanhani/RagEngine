@@ -7,7 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include=".github\copilot-instructions.md" />
+    <Compile Remove=".github\**" />
+    <Content Remove=".github\**" />
+    <EmbeddedResource Remove=".github\**" />
+    <None Remove=".github\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,7 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RagEngine.Application\RagEngine.Application.csproj" />
+    <ProjectReference Include="..\RagEngine.Domain\RagEngine.Domain.csproj" />
     <ProjectReference Include="..\RagEngine.Infrastructure\RagEngine.Infrastructure.csproj" />
   </ItemGroup>
 

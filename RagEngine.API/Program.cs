@@ -15,7 +15,7 @@ namespace RagEngine
             builder.Services.Configure<OllamaOptions>(
                 builder.Configuration.GetSection("Ollama"));
 
-            builder.Services.AddHttpClient<IEmbeddingService, OllamaEmbeddingService> (
+            builder.Services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator> (
                 (serviceProvider, httpClient) =>
             {
                 var options = serviceProvider

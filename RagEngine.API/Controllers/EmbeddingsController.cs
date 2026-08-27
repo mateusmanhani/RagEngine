@@ -8,9 +8,9 @@ namespace RagEngine.API.Controllers
     public class EmbeddingsController : ControllerBase
     {
         private readonly ILogger<EmbeddingsController> _logger;
-        private readonly IEmbeddingService _embeddingService;
+        private readonly IEmbeddingGenerator _embeddingService;
 
-        public EmbeddingsController(ILogger<EmbeddingsController> logger, IEmbeddingService embeddingService)
+        public EmbeddingsController(ILogger<EmbeddingsController> logger, IEmbeddingGenerator embeddingService)
         {
             _logger = logger;
             _embeddingService = embeddingService;

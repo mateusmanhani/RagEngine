@@ -5,13 +5,13 @@ using System.Net.Http.Json;
 
 namespace RagEngine.Infrastructure.Embedding
 {
-    public class OllamaEmbeddingService : IEmbeddingService
+    public class OllamaEmbeddingGenerator : IEmbeddingGenerator
     {
-        private readonly ILogger<OllamaEmbeddingService> _logger;
+        private readonly ILogger<OllamaEmbeddingGenerator> _logger;
         private readonly HttpClient _httpClient;
         private readonly IOptions<OllamaOptions> _ollamaOptions;
 
-        public OllamaEmbeddingService(ILogger<OllamaEmbeddingService> logger, HttpClient httpClient, IOptions<OllamaOptions> ollamaOptions)
+        public OllamaEmbeddingGenerator(ILogger<OllamaEmbeddingGenerator> logger, HttpClient httpClient, IOptions<OllamaOptions> ollamaOptions)
         {
             _logger = logger;
             _httpClient = httpClient;

@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/RagEngine.Infrastructure.Tests/RagEngine.Infrastructure.Tests.csproj" Id="bc3124d9-4ed7-4707-8a07-df9a8b31fd08" />
+  </Folder>
   <Project Path="RagEngine.API/RagEngine.API.csproj" />
   <Project Path="RagEngine.Application/RagEngine.Application.csproj" Id="d27405e2-6448-4cbd-82ff-9d9673c768e2" />
   <Project Path="RagEngine.Domain/RagEngine.Domain.csproj" Id="21962f5d-47ff-4c32-a190-f91f4ec5e587" />
