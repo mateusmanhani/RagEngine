@@ -6,5 +6,6 @@ namespace RagEngine.Application.Interfaces
     {
         Task AddAsync(IEnumerable<Chunk> chunks, CancellationToken cancellationToken = default);
         Task<IEnumerable<Chunk>> SearchAsync(float[] embedding, int topK, CancellationToken cancellationToken = default);
+        Task<IEnumerable<Chunk>> GetAllAsync(CancellationToken cancellationToken = default);
     }
 }

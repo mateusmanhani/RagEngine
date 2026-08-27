@@ -62,5 +62,21 @@ namespace RagEngine.Infrastructure.VectorStore
 
             return results;
         }
+
+        public async Task<IEnumerable<Chunk>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var queryText = "SELECT c.id, c.documentId, c.chunkIndex, c.content, c.embedding FROM c";
+
+            var results = new List<Chunk>();
+
+            using var iterator = _container.GetItemQueryIterator<Chunk>(new QueryDefinition(queryText));
+            while (iterator.HasMoreResults)
+            {
+                var response = await iterator.ReadNextAsync(cancellationToken);
+                results.AddRange(response);
+            }
+
+            return results;
+        }
     }
 }

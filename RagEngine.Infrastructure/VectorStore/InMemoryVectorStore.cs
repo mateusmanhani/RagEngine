@@ -35,5 +35,10 @@ namespace RagEngine.Infrastructure.VectorStore
 
             return Task.FromResult(results);
         }
+
+        public Task<IEnumerable<Chunk>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IEnumerable<Chunk>>(_chunks.ToList());
+        }
     }
 }

@@ -26,12 +26,12 @@ namespace RagEngine.Application
             _vectorStore = vectorStore;
         }
 
-        public async Task IngestFolderAsync (string folderPath, CancellationToken cancellationToken = default)
+        public async Task<IngestionResult> IngestFolderAsync (string folderPath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(folderPath))
             {
                 _logger.LogError("Folder path cannot be null or empty.");
-                return;
+                return new IngestionResult(0, 0);
             }
 
             var documents = (await _documentLoader.LoadFromFolderAsync(folderPath, cancellationToken)).ToList();
@@ -39,8 +39,10 @@ namespace RagEngine.Application
             if (documents.Count == 0)
             {
                 _logger.LogWarning("No valid documents found in the folder.");
-                return;
+                return new IngestionResult(0, 0);
             }
+
+            var totalChunkCount = 0;
 
             foreach (var document in documents)
             {
@@ -53,7 +55,15 @@ namespace RagEngine.Application
                     .ToList();
 
                 await _vectorStore.AddAsync(embeddedChunks, cancellationToken);
+
+                totalChunkCount += embeddedChunks.Count;
             }
+
+            _logger.LogInformation(
+                "Ingested {DocumentCount} documents into {ChunkCount} chunks from {FolderPath}.",
+                documents.Count, totalChunkCount, folderPath);
+
+            return new IngestionResult(documents.Count, totalChunkCount);
         }
     }
 }

@@ -1,9 +1,11 @@
 
 using Microsoft.Extensions.Options;
+using RagEngine.Application;
 using RagEngine.Application.Interfaces;
 using RagEngine.Infrastructure.DocumentIngestion;
 using RagEngine.Infrastructure.Embedding;
 using RagEngine.Infrastructure.VectorStore;
+using Scalar.AspNetCore;
 
 namespace RagEngine
 {
@@ -33,6 +35,8 @@ namespace RagEngine
 
             builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
 
+            builder.Services.AddScoped<IngestionPipeline>();
+
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
@@ -43,6 +47,7 @@ namespace RagEngine
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
+                app.MapScalarApiReference();
             }
 
             app.UseHttpsRedirection();
