@@ -38,6 +38,7 @@ namespace RagEngine
             builder.Services.AddScoped<IVectorStore, CosmosDBVectorStore>();
 
             builder.Services.AddScoped<IngestionPipeline>();
+            builder.Services.AddScoped<RetrievalPipeline>();
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

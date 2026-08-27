@@ -2,6 +2,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RagEngine.Application;
 using RagEngine.Application.Interfaces;
 using RagEngine.Domain.Entities;
 
@@ -35,7 +36,7 @@ namespace RagEngine.Infrastructure.VectorStore
             }
         }
 
-        public async Task<IEnumerable<Chunk>> SearchAsync(float[] embedding, int topK, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<RetrievalResult>> SearchAsync(float[] embedding, int topK, CancellationToken cancellationToken = default)
         {
             if (topK <= 0 || topK > 50)
             {
@@ -43,7 +44,8 @@ namespace RagEngine.Infrastructure.VectorStore
             }
 
             var queryText = $"""
-                SELECT TOP {topK} c.id, c.documentId, c.chunkIndex, c.content, c.embedding
+                SELECT TOP {topK} c.id, c.documentId, c.chunkIndex, c.content, c.embedding,
+                       VectorDistance(c.embedding, @queryEmbedding) AS distance
                 FROM c
                 ORDER BY VectorDistance(c.embedding, @queryEmbedding)
                 """;
@@ -51,17 +53,40 @@ namespace RagEngine.Infrastructure.VectorStore
             var queryDefinition = new QueryDefinition(queryText)
                 .WithParameter("@queryEmbedding", embedding);
 
-            var results = new List<Chunk>();
+            var results = new List<RetrievalResult>();
 
-            using var iterator = _container.GetItemQueryIterator<Chunk>(queryDefinition);
+            using var iterator = _container.GetItemQueryIterator<CosmosSearchProjection>(queryDefinition);
             while (iterator.HasMoreResults)
             {
                 var response = await iterator.ReadNextAsync(cancellationToken);
-                results.AddRange(response);
+                results.AddRange(response.Select(item => new RetrievalResult(
+                    new Chunk(item.Id, item.DocumentId, item.ChunkIndex, item.Content, item.Embedding),
+                    CosineDistanceToSimilarity(item.Distance))));
             }
 
             return results;
         }
+
+        /// <summary>
+        /// Shape used only to bind the projected VectorDistance score alongside chunk fields;
+        /// Cosmos won't bind an ad-hoc SELECT column onto the Chunk record since it has no Score property.
+        /// </summary>
+        private sealed class CosmosSearchProjection
+        {
+            public string Id { get; set; } = string.Empty;
+            public string DocumentId { get; set; } = string.Empty;
+            public int ChunkIndex { get; set; }
+            public string Content { get; set; } = string.Empty;
+            public float[]? Embedding { get; set; }
+            public double Distance { get; set; }
+        }
+
+        /// <summary>
+        /// Cosmos's VectorDistance (with distanceFunction: cosine) returns cosine distance in [0, 2],
+        /// where 0 = identical and 2 = opposite. We invert it to cosine similarity in [-1, 1]
+        /// so Score means the same thing (higher = more relevant) across every IVectorStore implementation.
+        /// </summary>
+        private static double CosineDistanceToSimilarity(double cosineDistance) => 1.0 - cosineDistance;
 
         public async Task<IEnumerable<Chunk>> GetAllAsync(CancellationToken cancellationToken = default)
         {

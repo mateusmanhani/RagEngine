@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using RagEngine.Application;
 using RagEngine.Application.Interfaces;
 using RagEngine.Domain.Entities;
 using System.Numerics.Tensors;
@@ -20,20 +21,15 @@ namespace RagEngine.Infrastructure.VectorStore
             return Task.CompletedTask;
         }
 
-        public Task<IEnumerable<Chunk>> SearchAsync(float[] embedding, int topK, CancellationToken cancellationToken = default)
+        public Task<IEnumerable<RetrievalResult>> SearchAsync(float[] embedding, int topK, CancellationToken cancellationToken = default)
         {
             var results = _chunks
                 .Where(c => c.Embedding is not null)
-                .Select(c => new
-                {
-                    Chunk = c,
-                    Similarity = TensorPrimitives.CosineSimilarity(embedding, c.Embedding!)
-                })
-                .OrderByDescending(x => x.Similarity)
-                .Take(topK)
-                .Select(x => x.Chunk);
+                .Select(c => new RetrievalResult(c, TensorPrimitives.CosineSimilarity(embedding, c.Embedding!)))
+                .OrderByDescending(r => r.SimilarityScore)
+                .Take(topK);
 
-            return Task.FromResult(results);
+            return Task.FromResult<IEnumerable<RetrievalResult>>(results);
         }
 
         public Task<IEnumerable<Chunk>> GetAllAsync(CancellationToken cancellationToken = default)
