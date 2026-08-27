@@ -37,7 +37,7 @@ namespace RagEngine.Infrastructure.DocumentIngestion
                     }
 
                     var document = new Document(
-                        Guid.NewGuid(),
+                        Guid.NewGuid().ToString(),
                         Path.GetFileName(path),
                         path,
                         format.Value,

@@ -30,7 +30,7 @@ namespace RagEngine.Infrastructure.Tests.DataIngestion
                 OverlapTokens = 2
             };
             var sut = CreateSut(options);
-            var document = new Document(Guid.NewGuid(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
+            var document = new Document(Guid.NewGuid().ToString(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
 
             // Act
             var chunks = sut.ChunkDocument(document).ToList();
@@ -50,7 +50,7 @@ namespace RagEngine.Infrastructure.Tests.DataIngestion
                 OverlapTokens = 2
             };
             var sut = CreateSut(options);
-            var document = new Document(Guid.NewGuid(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
+            var document = new Document(Guid.NewGuid().ToString(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
 
             // Act
             var chunks = sut.ChunkDocument(document).ToList();
@@ -89,13 +89,13 @@ namespace RagEngine.Infrastructure.Tests.DataIngestion
                 OverlapTokens = 2
             };
             var sut = CreateSut(options);
-            var document = new Document(Guid.NewGuid(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
+            var document = new Document(Guid.NewGuid().ToString(), "sample.txt", "sample.txt", DocumentFormat.Text, SampleText);
 
             // Act
             var chunks = sut.ChunkDocument(document).ToList();
 
             // Assert
-            chunks.Select(c => c.DocumentId).Should().AllBeEquivalentTo(document.Id.ToString());
+            chunks.Select(c => c.DocumentId).Should().AllBeEquivalentTo(document.Id);
         }
     }
 }

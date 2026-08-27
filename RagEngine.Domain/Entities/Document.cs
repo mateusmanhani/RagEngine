@@ -3,7 +3,7 @@
 namespace RagEngine.Domain.Entities
 {
     public record Document(
-    Guid Id,
+    string Id,
     string SourceName,
     string FilePath,
     DocumentFormat Format,
