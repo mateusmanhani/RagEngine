@@ -33,7 +33,9 @@ namespace RagEngine
 
             builder.Services.AddScoped<IDocumentLoader, DocumentLoader>();
 
-            builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
+            //builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
+            builder.Services.Configure<CosmosDbConfig>(builder.Configuration.GetSection("CosmosDb"));
+            builder.Services.AddScoped<IVectorStore, CosmosDBVectorStore>();
 
             builder.Services.AddScoped<IngestionPipeline>();
 

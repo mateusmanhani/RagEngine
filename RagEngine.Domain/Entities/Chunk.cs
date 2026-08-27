@@ -1,9 +1,11 @@
-﻿namespace RagEngine.Domain.Entities
+﻿using Newtonsoft.Json;
+
+namespace RagEngine.Domain.Entities
 {
     public record Chunk(
-        string Id,
-        string DocumentId,
-        int ChunkIndex,
-        string Content,
-        float[]? Embedding = null);
+        [property: JsonProperty("id")] string Id,
+        [property: JsonProperty("documentID")] string DocumentId,
+        [property: JsonProperty("chunkIndex")] int ChunkIndex,
+        [property: JsonProperty("content")] string Content,
+        [property: JsonProperty("embedding")] float[]? Embedding = null);
 }
