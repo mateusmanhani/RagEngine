@@ -1,4 +1,4 @@
-﻿namespace RagEngine.Infrastructure.Embedding
+﻿namespace RagEngine.Infrastructure.Ollama.Embedding
 {
     public class EmbedResponse
     {

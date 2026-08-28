@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
-using RagEngine.Application;
 using RagEngine.Application.Interfaces;
 using RagEngine.Domain.Entities;
 using System.Numerics.Tensors;
+using RagEngine.Application.DTO;
 
 namespace RagEngine.Infrastructure.VectorStore
 {

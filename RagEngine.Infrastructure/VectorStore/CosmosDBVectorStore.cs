@@ -2,7 +2,7 @@
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RagEngine.Application;
+using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
 using RagEngine.Domain.Entities;
 

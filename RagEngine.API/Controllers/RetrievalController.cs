@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using RagEngine.Application;
+using RagEngine.Application.Services;
 
 namespace RagEngine.API.Controllers
 {

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using RagEngine.Application.Interfaces;
 using System.Net.Http.Json;
 
-namespace RagEngine.Infrastructure.Embedding
+namespace RagEngine.Infrastructure.Ollama.Embedding
 {
     public class OllamaEmbeddingGenerator : IEmbeddingGenerator
     {

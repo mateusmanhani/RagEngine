@@ -1,9 +1,11 @@
 
 using Microsoft.Extensions.Options;
-using RagEngine.Application;
 using RagEngine.Application.Interfaces;
+using RagEngine.Application.Services;
 using RagEngine.Infrastructure.DocumentIngestion;
-using RagEngine.Infrastructure.Embedding;
+using RagEngine.Infrastructure.Ollama;
+using RagEngine.Infrastructure.Ollama.Embedding;
+using RagEngine.Infrastructure.Ollama.Synthesis;
 using RagEngine.Infrastructure.VectorStore;
 using Scalar.AspNetCore;
 
@@ -25,6 +27,14 @@ namespace RagEngine
                 var options = serviceProvider
                 .GetRequiredService<IOptions<OllamaOptions>>().Value;
 
+                httpClient.BaseAddress = new Uri(options.BaseUrl);
+            });
+
+            builder.Services.AddHttpClient<IAnswerGenerator, OllamaAnswerGenerator>(
+                (serviceProvider, httpClient) =>
+            {
+                var options = serviceProvider
+                .GetRequiredService<IOptions<OllamaOptions>>().Value;
                 httpClient.BaseAddress = new Uri(options.BaseUrl);
             });
 

@@ -1,4 +1,5 @@
-﻿using RagEngine.Domain.Entities;
+﻿using RagEngine.Application.DTO;
+using RagEngine.Domain.Entities;
 
 namespace RagEngine.Application.Interfaces
 {
