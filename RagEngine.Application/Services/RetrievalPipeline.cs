@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
-using RagEngine.Domain.Entities;
 
 namespace RagEngine.Application.Services
 {
