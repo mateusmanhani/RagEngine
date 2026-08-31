@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using RagEngine.Application.DTO;
@@ -26,22 +27,42 @@ namespace RagEngine.Application.Services
 
         public async Task<string> AnswerAsync(string query, int topK, CancellationToken cancellationToken = default)
         {
-            var similarChunks = await _retrievalPipeline.GetSimilarChunksAsync(query, topK, cancellationToken);
+            var totalStopwatch = Stopwatch.StartNew();
 
-            var relevantChunks = similarChunks
-                .Where(result => result.SimilarityScore >= MinimumSimilarityScore)
-                .Take(3)
-                .ToList();
-
-            if (relevantChunks.Count == 0)
+            try
             {
-                _logger.LogInformation("No chunks met the minimum similarity score of {MinimumScore} for query {Query}.", MinimumSimilarityScore, query);
-                return "I couldn't find relevant information to answer that question.";
-            }
+                var similarChunks = await _retrievalPipeline.GetSimilarChunksAsync(query, topK, cancellationToken);
 
-            var prompt = BuildPrompt(query, relevantChunks);
-            var answer = await _answerGenerator.GenerateAsync(prompt, cancellationToken);
-            return answer;
+                var relevantChunks = similarChunks
+                    .Where(result => result.SimilarityScore >= MinimumSimilarityScore)
+                    .Take(3)
+                    .ToList();
+
+                if (relevantChunks.Count == 0)
+                {
+                    _logger.LogInformation("No chunks met the minimum similarity score of {MinimumScore} for query {Query}.", MinimumSimilarityScore, query);
+                    return "I couldn't find relevant information to answer that question.";
+                }
+
+                var promptStopwatch = Stopwatch.StartNew();
+                var prompt = BuildPrompt(query, relevantChunks);
+                promptStopwatch.Stop();
+                _logger.LogInformation(
+                    "Prompt construction completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",
+                    promptStopwatch.Elapsed.TotalMilliseconds,
+                    query);
+
+                var answer = await _answerGenerator.GenerateAsync(prompt, cancellationToken);
+                return answer;
+            }
+            finally
+            {
+                totalStopwatch.Stop();
+                _logger.LogInformation(
+                    "Total RAG request completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",
+                    totalStopwatch.Elapsed.TotalMilliseconds,
+                    query);
+            }
         }
 
         private static string BuildPrompt(string query, IEnumerable<RetrievalResult> chunks)

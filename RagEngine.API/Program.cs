@@ -1,13 +1,14 @@
 
 using Microsoft.Extensions.Options;
+using Serilog;
 using RagEngine.Application.Interfaces;
 using RagEngine.Application.Services;
 using RagEngine.Infrastructure.DocumentIngestion;
-using RagEngine.Infrastructure.Ollama;
-using RagEngine.Infrastructure.Ollama.Embedding;
-using RagEngine.Infrastructure.Ollama.Synthesis;
+using RagEngine.Infrastructure.Config;
 using RagEngine.Infrastructure.VectorStore;
 using Scalar.AspNetCore;
+using RagEngine.Infrastructure.Synthesis;
+using RagEngine.Infrastructure.Embedding;
 
 namespace RagEngine
 {
@@ -16,6 +17,11 @@ namespace RagEngine
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
+                .ReadFrom.Configuration(context.Configuration)
+                .ReadFrom.Services(services)
+                .Enrich.FromLogContext());
 
             // Add services to the container.
             builder.Services.Configure<OllamaOptions>(
@@ -64,6 +70,7 @@ namespace RagEngine
                 app.MapScalarApiReference();
             }
 
+            app.UseSerilogRequestLogging();
             app.UseHttpsRedirection();
 
             app.UseAuthorization();

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
 
@@ -34,8 +35,22 @@ namespace RagEngine.Application.Services
                 throw new ArgumentOutOfRangeException(nameof(topK), topK, "topK must be between 1 and 50.");
             }
 
+            var embeddingStopwatch = Stopwatch.StartNew();
             var queryEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(query, cancellationToken);
+            embeddingStopwatch.Stop();
+            _logger.LogInformation(
+                "Query embedding completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",
+                embeddingStopwatch.Elapsed.TotalMilliseconds,
+                query);
+
+            var searchStopwatch = Stopwatch.StartNew();
             var similarChunks = await _vectorStore.SearchAsync(queryEmbedding, topK, cancellationToken);
+            searchStopwatch.Stop();
+            _logger.LogInformation(
+                "Cosmos vector search completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",
+                searchStopwatch.Elapsed.TotalMilliseconds,
+                query);
+
             return similarChunks;
         }
     }

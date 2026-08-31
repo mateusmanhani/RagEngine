@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RagEngine.Application.Interfaces;
+using RagEngine.Infrastructure.Config;
 using System.Net.Http.Json;
 
-namespace RagEngine.Infrastructure.Ollama.Embedding
+namespace RagEngine.Infrastructure.Embedding
 {
     public class OllamaEmbeddingGenerator : IEmbeddingGenerator
     {
