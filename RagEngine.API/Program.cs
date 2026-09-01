@@ -9,6 +9,9 @@ using RagEngine.Infrastructure.VectorStore;
 using Scalar.AspNetCore;
 using RagEngine.Infrastructure.Synthesis;
 using RagEngine.Infrastructure.Embedding;
+using RagEngine.Infrastructure;
+using Azure.Search.Documents;
+using Azure.Identity;
 
 namespace RagEngine
 {
@@ -23,9 +26,26 @@ namespace RagEngine
                 .ReadFrom.Services(services)
                 .Enrich.FromLogContext());
 
-            // Add services to the container.
-            builder.Services.Configure<OllamaOptions>(
-                builder.Configuration.GetSection("Ollama"));
+            // -------- Configuration --------
+            builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
+            builder.Services.Configure<CosmosDbConfig>(builder.Configuration.GetSection("CosmosDb"));
+            builder.Services.Configure<ChunkingOptions>(builder.Configuration.GetSection("Chunking"));
+            builder.Services.Configure<AzureSearchOptions>(builder.Configuration.GetSection("AzureSearch"));
+
+            builder.Services.AddSingleton<SearchClient>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+
+                var endpoint = config["AzureSearch:Endpoint"];
+                var indexName = config["AzureSearch:IndexName"];
+
+                return new SearchClient(
+                    new Uri(endpoint!),
+                    indexName!,
+                    new AzureCliCredential());
+            });
+
+            // --------- Ollama --------
 
             builder.Services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator> (
                 (serviceProvider, httpClient) =>
@@ -44,18 +64,20 @@ namespace RagEngine
                 httpClient.BaseAddress = new Uri(options.BaseUrl);
             });
 
-            builder.Services.Configure<ChunkingOptions>(builder.Configuration.GetSection("Chunking"));
+
             builder.Services.AddScoped<IChunker, SemanticKernelChunker>();
 
             builder.Services.AddScoped<IDocumentLoader, DocumentLoader>();
-
-            //builder.Services.AddSingleton<IVectorStore, InMemoryVectorStore>();
-            builder.Services.Configure<CosmosDbConfig>(builder.Configuration.GetSection("CosmosDb"));
+            
             builder.Services.AddScoped<IVectorStore, CosmosDBVectorStore>();
 
+            //    -------------     Pipelines      ------------------
+
             builder.Services.AddScoped<IngestionPipeline>();
-            builder.Services.AddScoped<RetrievalPipeline>();
+            builder.Services.AddScoped<IRetriever, AzureSearchRetriever>();
             builder.Services.AddScoped<RagPipeline>();
+
+            //  -------------     API      ------------------
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

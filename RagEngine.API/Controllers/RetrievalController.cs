@@ -8,9 +8,9 @@ namespace RagEngine.API.Controllers
     public class RetrievalController : ControllerBase
     {
         private readonly ILogger<RetrievalController> _logger;
-        private readonly RetrievalPipeline _retrievalPipeline;
+        private readonly CosmosRetriever _retrievalPipeline;
 
-        public RetrievalController(ILogger<RetrievalController> logger, RetrievalPipeline retrievalPipeline)
+        public RetrievalController(ILogger<RetrievalController> logger, CosmosRetriever retrievalPipeline)
         {
             _logger = logger;
             _retrievalPipeline = retrievalPipeline;
@@ -21,7 +21,7 @@ namespace RagEngine.API.Controllers
         {
             try
             {
-                var results = await _retrievalPipeline.GetSimilarChunksAsync(query, topK, cancellationToken);
+                var results = await _retrievalPipeline.SearchAsync(query, topK, cancellationToken);
                 return Ok(results);
             }
             catch (ArgumentException ex)

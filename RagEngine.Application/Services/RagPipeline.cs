@@ -12,16 +12,16 @@ namespace RagEngine.Application.Services
         private const double MinimumSimilarityScore = 0.2;
 
         private readonly ILogger<RagPipeline> _logger;
-        private readonly RetrievalPipeline _retrievalPipeline;
+        private readonly IRetriever _retriever;
         private readonly IAnswerGenerator _answerGenerator;
 
         public RagPipeline(
             ILogger<RagPipeline> logger,
-            RetrievalPipeline retrievalPipeline,
+            IRetriever retriever,
             IAnswerGenerator answerGenerator)
         {
             _logger = logger;
-            _retrievalPipeline = retrievalPipeline;
+            _retriever = retriever;
             _answerGenerator = answerGenerator;
         }
 
@@ -31,7 +31,7 @@ namespace RagEngine.Application.Services
 
             try
             {
-                var similarChunks = await _retrievalPipeline.GetSimilarChunksAsync(query, topK, cancellationToken);
+                var similarChunks = await _retriever.SearchAsync(query, topK, cancellationToken);
 
                 var relevantChunks = similarChunks
                     .Where(result => result.SimilarityScore >= MinimumSimilarityScore)

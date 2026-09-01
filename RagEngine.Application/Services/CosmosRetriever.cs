@@ -5,14 +5,14 @@ using RagEngine.Application.Interfaces;
 
 namespace RagEngine.Application.Services
 {
-    public class RetrievalPipeline
+    public class CosmosRetriever : IRetriever
     {
-        private readonly ILogger<RetrievalPipeline> _logger;
+        private readonly ILogger<CosmosRetriever> _logger;
         private readonly IEmbeddingGenerator _embeddingGenerator;
         private readonly IVectorStore _vectorStore;
 
-        public RetrievalPipeline(
-            ILogger<RetrievalPipeline> logger,
+        public CosmosRetriever(
+            ILogger<CosmosRetriever> logger,
             IEmbeddingGenerator embeddingGenerator,
             IVectorStore vectorStore)
         {
@@ -21,7 +21,7 @@ namespace RagEngine.Application.Services
             _vectorStore = vectorStore;
         }
 
-        public async Task<IEnumerable<RetrievalResult>> GetSimilarChunksAsync(string query, int topK, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<RetrievalResult>> SearchAsync(string query, int topK, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(query))
             {
