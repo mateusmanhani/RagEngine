@@ -1,51 +1,98 @@
 # RagEngine
 
-A small, learning-focused Retrieval-Augmented Generation (RAG) proof of concept built with **C# / .NET 10**. RagEngine ingests local documents, chunks them, generates embeddings, stores them in a vector store, and exposes a browsable API for inspection — all running locally with [Ollama](https://ollama.com/).
+A learning-focused **Retrieval-Augmented Generation (RAG) proof of concept** built with **C# / .NET 10**.
 
-This project is intentionally simple. It's a POC for exploring RAG architecture and Azure Cosmos DB vector search, not a production system.
+RagEngine explores how a RAG application works end-to-end: from document ingestion and chunking to embeddings, vector search, context retrieval, and LLM-generated answers.
 
-## What it does
+The goal is not just to use AI tools, but to understand the architecture and trade-offs behind them.
 
-```text
-Load documents (.txt, .md)
-		↓
-Chunk into passages (Semantic Kernel TextChunker)
-		↓
-Generate embeddings (Ollama, batched)
-		↓
-Store chunks + embeddings (vector store)
-		↓
-Inspect via API / Scalar
-```
-
-## Tech stack
-
-- **.NET 10** / ASP.NET Core Web API
-- **Ollama** (local) for embeddings — `qwen3-embedding:0.6b` (1024-dim)
-- **Azure Cosmos DB for NoSQL** as the target vector store (vector search over `/embedding`)
-- **Semantic Kernel** `TextChunker` for chunking
-- **Scalar** for interactive API documentation
-
-## Project structure
+## Architecture
 
 ```text
-RagEngine.API             API host: controllers, DI composition root
-RagEngine.Application     Interfaces + orchestration (IngestionPipeline)
-RagEngine.Domain          Core entities (Document, Chunk)
-RagEngine.Infrastructure  Concrete implementations (Ollama, chunker, vector stores)
-Tests                     Unit / integration tests
+Documents (.txt, .md)
+        ↓
+Document Loading
+        ↓
+Chunking
+        ↓
+Embedding Generation
+        ↓
+Vector Storage
+        ↓
+Query
+        ↓
+Vector Similarity Search
+        ↓
+Relevant Context
+        ↓
+LLM Answer Generation
 ```
 
-The design favors small interfaces at the boundaries so pieces can be swapped later — e.g. `IEmbeddingGenerator` (Ollama today, Azure OpenAI later) and `IVectorStore` (in-memory today, Cosmos DB when ready).
+## Tech Stack
 
-## Running locally
+* **C# / .NET 10**
+* **ASP.NET Core Web API**
+* **Semantic Kernel** — document chunking
+* **Ollama** — local embeddings and LLM inference
+
+  * `qwen3-embedding:0.6b`
+  * `qwen3:4b`
+* **Azure Cosmos DB for NoSQL** — vector storage and similarity search
+* **Scalar** — interactive API documentation
+* **Options Pattern** — configurable RAG settings such as `TopK`
+
+## Features
+
+* Document ingestion from `.txt` and `.md` files
+* Document chunking with Semantic Kernel
+* Batch embedding generation
+* Vector similarity search
+* Configurable `TopK` retrieval
+* Retrieval-Augmented Generation pipeline
+* LLM answer generation using retrieved document context
+* Diagnostics endpoints for inspecting stored chunks
+* Clean architecture with interchangeable infrastructure components
+
+## Project Structure
+
+```text
+RagEngine.API
+    API controllers and application configuration
+
+RagEngine.Application
+    Application services, interfaces, and RAG pipelines
+
+RagEngine.Domain
+    Core domain entities
+
+RagEngine.Infrastructure
+    Embeddings, chunking, vector stores, and external integrations
+
+Tests
+    Unit and integration tests
+```
+
+The project uses abstractions at infrastructure boundaries to make components replaceable.
+
+For example:
+
+* `IEmbeddingGenerator` — Ollama today, another embedding provider later
+* `IVectorStore` — different vector storage implementations
+* LLM providers can be changed independently from retrieval
+
+## Running Locally
 
 ### Prerequisites
 
-- .NET 10 SDK
-- [Ollama](https://ollama.com/) running locally with the following models pulled:
-  - `qwen3-embedding:0.6b`
-  - `qwen3:4b`
+* .NET 10 SDK
+* [Ollama](https://ollama.com/) running locally
+
+Pull the required models:
+
+```powershell
+ollama pull qwen3-embedding:0.6b
+ollama pull qwen3:4b
+```
 
 ### Run the API
 
@@ -53,44 +100,89 @@ The design favors small interfaces at the boundaries so pieces can be swapped la
 dotnet run --project RagEngine.API
 ```
 
-Then browse the API reference at `/scalar`.
+Open the API documentation at:
 
-### Ingest a folder of documents
+```text
+/scalar
+```
+
+## Example Workflow
+
+### 1. Ingest documents
 
 ```http
 POST /api/ingestion/folder?folderPath=C:\path\to\docs
 ```
 
-Accepts a folder of `.txt` / `.md` files and returns a summary of documents and chunks processed.
+The ingestion pipeline:
 
-### Inspect stored chunks
+1. Loads supported documents
+2. Splits them into chunks
+3. Generates embeddings
+4. Stores chunks and vectors
 
-```http
-GET /api/diagnostics/chunks
-GET /api/diagnostics/chunks?documentId={id}
-```
-
-Useful for verifying chunk boundaries and embedding dimensions without querying the vector store directly.
-
-### Generate an embedding manually
+### 2. Ask a question
 
 ```http
-POST /api/embeddings
+GET /api/rag?query=Your question here
 ```
 
-## Current status
+The RAG pipeline:
 
-- ✅ Document loading, chunking, and batch embedding generation
-- ✅ In-memory vector store with cosine similarity search
-- ✅ Cosmos DB vector store implementation (built, not yet wired in)
-- ✅ Ingestion pipeline + diagnostics endpoints
-- 🚧 Retrieval-augmented answer generation (query → context → LLM) — not yet implemented
-- 🚧 Prompt-injection protections and basic security — planned for a later phase
+1. Generates an embedding for the query
+2. Retrieves the most relevant document chunks
+3. Builds contextual information for the LLM
+4. Generates an answer based on the retrieved context
 
-## Roadmap
+The number of retrieved chunks is configurable through `appsettings.json`:
 
-This project follows an incremental plan: infrastructure integration → minimal vector store → basic RAG (retrieval + generation) → prompt-injection protections → basic security → optional agent/tool capabilities. See [`.github/copilot-instructions.md`](.github/copilot-instructions.md) for the full phased approach used to guide development.
+```json
+"RagOptions": {
+  "TopK": 5
+}
+```
 
-## How this was built
+## Current Status
 
-This project was built with GitHub Copilot acting as a mentor/reviewer, not an autopilot: I wrote and reviewed the implementation myself, while Copilot was constrained by [`.github/copilot-instructions.md`](.github/copilot-instructions.md) to teach concepts, challenge design decisions, and enforce an incremental, POC-appropriate architecture rather than generating a finished app in one shot. See that file for the full guardrails.
+* ✅ Document ingestion
+* ✅ Semantic chunking
+* ✅ Local embedding generation with Ollama
+* ✅ Batch embedding generation
+* ✅ Vector similarity search
+* ✅ Azure Cosmos DB vector store integration
+* ✅ Retrieval pipeline
+* ✅ Retrieval-Augmented Generation
+* ✅ LLM answer generation
+* ✅ Configurable retrieval settings
+* 🚧 Hybrid search
+* 🚧 Performance optimisation and model/provider evaluation
+* 🚧 Prompt injection and additional security protections
+
+## Why This Project?
+
+This project is intentionally built incrementally.
+
+Rather than using a framework to hide the entire RAG pipeline, each stage is implemented and explored individually to better understand:
+
+* How document chunking affects retrieval
+* How embeddings and semantic search work
+* How vector databases perform similarity search
+* How `TopK` affects context quality
+* How retrieval impacts LLM responses
+* Where performance bottlenecks occur
+* The trade-offs between local and cloud-based models
+
+## What's Next?
+
+The project will continue evolving as new concepts are explored, including:
+
+* Hybrid search
+* Retrieval quality improvements
+* Performance optimisation
+* Alternative LLM providers
+* Improved prompt and context handling
+* Security and prompt-injection protections
+
+---
+
+**RagEngine is a learning project built to understand RAG architecture — not just to ship an AI application.**
