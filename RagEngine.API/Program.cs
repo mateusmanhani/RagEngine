@@ -12,6 +12,7 @@ using RagEngine.Infrastructure.Embedding;
 using RagEngine.Infrastructure;
 using Azure.Search.Documents;
 using Azure.Identity;
+using System.Net.Http.Headers;
 
 namespace RagEngine
 {
@@ -27,10 +28,14 @@ namespace RagEngine
                 .Enrich.FromLogContext());
 
             // -------- Configuration --------
+            builder.Configuration.AddAzureKeyVault(new Uri(builder.Configuration["KeyVault:Uri"]!), new DefaultAzureCredential());
+
             builder.Services.Configure<OllamaOptions>(builder.Configuration.GetSection("Ollama"));
             builder.Services.Configure<CosmosDbConfig>(builder.Configuration.GetSection("CosmosDb"));
             builder.Services.Configure<ChunkingOptions>(builder.Configuration.GetSection("Chunking"));
             builder.Services.Configure<AzureSearchOptions>(builder.Configuration.GetSection("AzureSearch"));
+            builder.Services.Configure<GroqOptions>(builder.Configuration.GetSection("Groq"));
+            builder.Services.Configure<RagOptions>(builder.Configuration.GetSection("RagOptions"));
 
             builder.Services.AddSingleton<SearchClient>(sp =>
             {
@@ -45,9 +50,9 @@ namespace RagEngine
                     new AzureCliCredential());
             });
 
-            // --------- Ollama --------
+            // --------- AI --------
 
-            builder.Services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator> (
+            builder.Services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator>(
                 (serviceProvider, httpClient) =>
             {
                 var options = serviceProvider
@@ -56,14 +61,18 @@ namespace RagEngine
                 httpClient.BaseAddress = new Uri(options.BaseUrl);
             });
 
-            builder.Services.AddHttpClient<IAnswerGenerator, OllamaAnswerGenerator>(
+            builder.Services.AddHttpClient<IAnswerGenerator, GroqAnswerGenerator>(
                 (serviceProvider, httpClient) =>
             {
                 var options = serviceProvider
-                .GetRequiredService<IOptions<OllamaOptions>>().Value;
+                .GetRequiredService<IOptions<GroqOptions>>().Value;
                 httpClient.BaseAddress = new Uri(options.BaseUrl);
+                httpClient.DefaultRequestHeaders.Authorization = 
+                    new AuthenticationHeaderValue(
+                        "Bearer", options.ApiKey);
             });
 
+            // -------------  Ingestion ------------------
 
             builder.Services.AddScoped<IChunker, SemanticKernelChunker>();
 

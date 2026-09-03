@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using RagEngine.Application.Exceptions;
 using RagEngine.Application.Services;
 
@@ -18,11 +19,11 @@ namespace RagEngine.API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> AskAsync([FromQuery] string query, [FromQuery] int topK = 5, CancellationToken cancellationToken = default)
+        public async Task<IActionResult> AskAsync([FromQuery] string query, CancellationToken cancellationToken = default)
         {
             try
             {
-                var answer = await _ragPipeline.AnswerAsync(query, topK, cancellationToken);
+                var answer = await _ragPipeline.AnswerAsync(query, cancellationToken);
                 return Ok(answer);
             }
             catch (ArgumentException ex)

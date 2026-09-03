@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
 
@@ -9,39 +10,54 @@ namespace RagEngine.Application.Services
     public class RagPipeline
     {
         // TODO: move to an options class (e.g. RagOptions) bound to appsettings once tuned.
-        private const double MinimumSimilarityScore = 0.2;
 
         private readonly ILogger<RagPipeline> _logger;
         private readonly IRetriever _retriever;
         private readonly IAnswerGenerator _answerGenerator;
+        private readonly RagOptions _options;
 
         public RagPipeline(
             ILogger<RagPipeline> logger,
             IRetriever retriever,
-            IAnswerGenerator answerGenerator)
+            IAnswerGenerator answerGenerator,
+            IOptions<RagOptions> options)
         {
             _logger = logger;
             _retriever = retriever;
             _answerGenerator = answerGenerator;
+            _options = options.Value;
         }
 
-        public async Task<string> AnswerAsync(string query, int topK, CancellationToken cancellationToken = default)
+        public async Task<string> AnswerAsync(string query, CancellationToken cancellationToken = default)
         {
             var totalStopwatch = Stopwatch.StartNew();
 
             try
             {
-                var similarChunks = await _retriever.SearchAsync(query, topK, cancellationToken);
+                var similarChunks = await _retriever.SearchAsync(query, _options.TopK, cancellationToken);
 
                 var relevantChunks = similarChunks
-                    .Where(result => result.SimilarityScore >= MinimumSimilarityScore)
-                    .Take(3)
+                    .Where(result => result.SimilarityScore >= _options.MinimumSimilarityScore)
+                    .Take(5)
                     .ToList();
 
                 if (relevantChunks.Count == 0)
                 {
-                    _logger.LogInformation("No chunks met the minimum similarity score of {MinimumScore} for query {Query}.", MinimumSimilarityScore, query);
+                    _logger.LogInformation("No chunks met the minimum similarity score of {MinimumScore} for query {Query}.", _options.MinimumSimilarityScore, query);
                     return "I couldn't find relevant information to answer that question.";
+                }
+
+                foreach (var chunk in relevantChunks)
+                {
+                    _logger.LogInformation(
+                        """
+                        Retrieved Chunk:
+                        Score: {Score}
+                        Content:
+                        {Content}
+                        """,
+                        chunk.SimilarityScore,
+                        chunk.Chunk.Content);
                 }
 
                 var promptStopwatch = Stopwatch.StartNew();

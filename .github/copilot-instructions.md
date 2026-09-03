@@ -409,6 +409,10 @@ Use `IOptions<T>` when grouped configuration becomes sufficiently complex to jus
 
 For local development, prefer secure local configuration mechanisms such as .NET User Secrets rather than committing credentials to Git.
 
+### Azure Key Vault Integration
+
+Store Azure Key Vault secrets using double dashes in the secret name (for example, Groq--ApiKey) to map to configuration keys with colons (Groq:ApiKey).
+
 ---
 
 # Architecture Review Criteria

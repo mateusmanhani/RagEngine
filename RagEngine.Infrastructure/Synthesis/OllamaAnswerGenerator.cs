@@ -39,7 +39,7 @@ namespace RagEngine.Infrastructure.Synthesis
 
             try
             {
-                var generateRequest = new GenerateRequest
+                var generateRequest = new OllamaGenerateRequest
                 {
                     Model = _options.GenerationModel,
                     Prompt = prompt,
@@ -83,7 +83,7 @@ namespace RagEngine.Infrastructure.Synthesis
                     throw new AnswerGenerationException(
                         "Failed to read Ollama response.");
                 }
-
+                
                 if (string.IsNullOrWhiteSpace(responseContent.Response))
                 {
                     throw new AnswerGenerationException(
