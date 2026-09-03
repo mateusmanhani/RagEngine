@@ -1,17 +1,18 @@
 
+using Azure.Identity;
+using Azure.Search.Documents;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
-using Serilog;
 using RagEngine.Application.Interfaces;
 using RagEngine.Application.Services;
-using RagEngine.Infrastructure.DocumentIngestion;
+using RagEngine.Infrastructure;
 using RagEngine.Infrastructure.Config;
+using RagEngine.Infrastructure.DocumentIngestion;
+using RagEngine.Infrastructure.Embedding;
+using RagEngine.Infrastructure.Synthesis;
 using RagEngine.Infrastructure.VectorStore;
 using Scalar.AspNetCore;
-using RagEngine.Infrastructure.Synthesis;
-using RagEngine.Infrastructure.Embedding;
-using RagEngine.Infrastructure;
-using Azure.Search.Documents;
-using Azure.Identity;
+using Serilog;
 using System.Net.Http.Headers;
 
 namespace RagEngine
@@ -52,14 +53,15 @@ namespace RagEngine
 
             // --------- AI --------
 
-            builder.Services.AddHttpClient<IEmbeddingGenerator, OllamaEmbeddingGenerator>(
-                (serviceProvider, httpClient) =>
-            {
-                var options = serviceProvider
-                .GetRequiredService<IOptions<OllamaOptions>>().Value;
+            builder.Services.AddHttpClient<IEmbeddingGenerator<string, Embedding<float>>, OllamaEmbeddingGenerator>(
+                 (serviceProvider, httpClient) =>
+                 {
+                     var options = serviceProvider
+                         .GetRequiredService<IOptions<OllamaOptions>>()
+                         .Value;
 
-                httpClient.BaseAddress = new Uri(options.BaseUrl);
-            });
+                     httpClient.BaseAddress = new Uri(options.BaseUrl);
+                 });
 
             builder.Services.AddHttpClient<IAnswerGenerator, GroqAnswerGenerator>(
                 (serviceProvider, httpClient) =>
@@ -83,7 +85,7 @@ namespace RagEngine
             //    -------------     Pipelines      ------------------
 
             builder.Services.AddScoped<IngestionPipeline>();
-            builder.Services.AddScoped<IRetriever, AzureSearchRetriever>();
+            builder.Services.AddScoped<IRetriever, CosmosRetriever>();
             builder.Services.AddScoped<RagPipeline>();
 
             //  -------------     API      ------------------

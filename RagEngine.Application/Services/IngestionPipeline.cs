@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Logging;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
 
@@ -9,14 +10,14 @@ namespace RagEngine.Application.Services
         private readonly ILogger<IngestionPipeline> _logger;
         private readonly IDocumentLoader _documentLoader;
         private readonly IChunker _chunker;
-        private readonly IEmbeddingGenerator _embeddingGenerator;
+        private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly IVectorStore _vectorStore;
 
         public IngestionPipeline(
             ILogger<IngestionPipeline> logger,
-            IDocumentLoader documentLoader, 
-            IChunker chunker, 
-            IEmbeddingGenerator embeddingGenerator, 
+            IDocumentLoader documentLoader,
+            IChunker chunker,
+            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
             IVectorStore vectorStore)
         {
             _logger = logger;
@@ -26,7 +27,7 @@ namespace RagEngine.Application.Services
             _vectorStore = vectorStore;
         }
 
-        public async Task<IngestionResult> IngestFolderAsync (string folderPath, CancellationToken cancellationToken = default)
+        public async Task<IngestionResult> IngestFolderAsync(string folderPath, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(folderPath))
             {
@@ -48,10 +49,22 @@ namespace RagEngine.Application.Services
             {
                 var chunks = _chunker.ChunkDocument(document).ToList();
 
-                var embeddings = await _embeddingGenerator.GenerateEmbeddingsAsync(chunks.Select(c => c.Content).ToList(), cancellationToken);
+                var embeddings = await _embeddingGenerator.GenerateAsync(chunks.Select(c => c.Content).ToList(), cancellationToken: cancellationToken);
+
+                if (embeddings.Count != chunks.Count)
+                {
+                    throw new InvalidOperationException(
+                        $"Embedding generator returned {embeddings.Count} embeddings " +
+                        $"for {chunks.Count} chunks.");
+                }
 
                 var embeddedChunks = chunks
-                    .Zip(embeddings, (chunk, embedding) => chunk with { Embedding = embedding })
+                    .Zip(
+                        embeddings, 
+                        (chunk, embedding) => chunk with
+                        {
+                            Embedding = embedding.Vector.ToArray()
+                        })
                     .ToList();
 
                 await _vectorStore.AddAsync(embeddedChunks, cancellationToken);

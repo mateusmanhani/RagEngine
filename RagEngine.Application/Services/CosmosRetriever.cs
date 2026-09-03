@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
@@ -8,12 +9,12 @@ namespace RagEngine.Application.Services
     public class CosmosRetriever : IRetriever
     {
         private readonly ILogger<CosmosRetriever> _logger;
-        private readonly IEmbeddingGenerator _embeddingGenerator;
+        private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
         private readonly IVectorStore _vectorStore;
 
         public CosmosRetriever(
             ILogger<CosmosRetriever> logger,
-            IEmbeddingGenerator embeddingGenerator,
+            IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
             IVectorStore vectorStore)
         {
             _logger = logger;
@@ -36,7 +37,7 @@ namespace RagEngine.Application.Services
             }
 
             var embeddingStopwatch = Stopwatch.StartNew();
-            var queryEmbedding = await _embeddingGenerator.GenerateEmbeddingAsync(query, cancellationToken);
+            var queryEmbedding = await _embeddingGenerator.GenerateAsync(query, cancellationToken: cancellationToken);
             embeddingStopwatch.Stop();
             _logger.LogInformation(
                 "Query embedding completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",
@@ -44,7 +45,7 @@ namespace RagEngine.Application.Services
                 query);
 
             var searchStopwatch = Stopwatch.StartNew();
-            var similarChunks = await _vectorStore.SearchAsync(queryEmbedding, topK, cancellationToken);
+            var similarChunks = await _vectorStore.SearchAsync(queryEmbedding.Vector.ToArray(), topK, cancellationToken);
             searchStopwatch.Stop();
             _logger.LogInformation(
                 "Cosmos vector search completed in {ElapsedMilliseconds:0.00} ms for query {Query}.",

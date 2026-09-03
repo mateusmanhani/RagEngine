@@ -1,87 +1,100 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using RagEngine.Application.Interfaces;
+using Microsoft.Extensions.AI;
 using RagEngine.Infrastructure.Config;
 using System.Net.Http.Json;
 
 namespace RagEngine.Infrastructure.Embedding
 {
-    public class OllamaEmbeddingGenerator : IEmbeddingGenerator
+    public class OllamaEmbeddingGenerator : IEmbeddingGenerator<string, Embedding<float>>
     {
         private readonly ILogger<OllamaEmbeddingGenerator> _logger;
         private readonly HttpClient _httpClient;
-        private readonly IOptions<OllamaOptions> _ollamaOptions;
+        private readonly OllamaOptions _options;
 
         public OllamaEmbeddingGenerator(ILogger<OllamaEmbeddingGenerator> logger, HttpClient httpClient, IOptions<OllamaOptions> ollamaOptions)
         {
             _logger = logger;
             _httpClient = httpClient;
-            _ollamaOptions = ollamaOptions;
+            _options = ollamaOptions.Value;
         }
 
-        public async Task<float[]> GenerateEmbeddingAsync(string input, CancellationToken cancellationToken = default)
+        public async Task<GeneratedEmbeddings<Embedding<float>>> GenerateAsync(
+            IEnumerable<string> values,
+            EmbeddingGenerationOptions? options = null,
+            CancellationToken cancellationToken = default)
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(input);
+            ArgumentNullException.ThrowIfNull(values);
 
-            var embeddings = await GenerateEmbeddingsAsync([input], cancellationToken);
-            return embeddings[0];
-        }
+            var inputs = values.ToArray();
 
-        public async Task<IReadOnlyList<float[]>> GenerateEmbeddingsAsync(IReadOnlyList<string> inputs, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(inputs);
-
-            if (inputs.Count == 0)
+            if (inputs.Length == 0)
             {
-                throw new ArgumentException("At least one input is required.", nameof(inputs));
+                throw new ArgumentException("At least one input is required.", nameof(values));
             }
-
-            var options = _ollamaOptions.Value;
 
             var request = new EmbedRequest
             {
-                Model = options.EmbeddingModel,
-                Input = inputs.ToArray()
+                Model = _options.EmbeddingModel,
+                Input = inputs
             };
 
-            using var response = await _httpClient.PostAsJsonAsync(options.EmbeddingEndpoint, request, cancellationToken);
+            using var response = await _httpClient.PostAsJsonAsync(
+                _options.EmbeddingEndpoint,
+                request,
+                cancellationToken);
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogError(
-                    "Ollama embedding request failed with status code {StatusCode}",
-                    response.StatusCode
-                );
-
-                throw new HttpRequestException(
-                    $"Ollama embedding request failed with status code {response.StatusCode}"
-                );
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken);
+                _logger.LogError("Failed to generate embeddings. Status Code: {StatusCode}, Response: {Response}", response.StatusCode, errorContent);
+                throw new HttpRequestException($"Failed to generate embeddings. Status Code: {response.StatusCode}, Response: {errorContent}");
             }
 
             var responseData = await response.Content.ReadFromJsonAsync<EmbedResponse>(cancellationToken: cancellationToken);
 
-            if (responseData is null)
+            if (responseData?.Embeddings is null)
             {
-                throw new HttpRequestException("Ollama returned an empty embedding response.");
+                throw new HttpRequestException("Failed to parse embeddings from the response.");
             }
 
-            if (responseData.Embeddings is null || responseData.Embeddings.Length != inputs.Count)
+            if (responseData.Embeddings.Length != inputs.Length)
             {
-                throw new HttpRequestException(
-                    $"Ollama returned {responseData.Embeddings?.Length ?? 0} embeddings, expected {inputs.Count}."
-                );
+                throw new HttpRequestException($"Ollama returned {responseData.Embeddings.Length} embeddings for {inputs.Length} inputs.");
             }
 
-            foreach (var embedding in responseData.Embeddings)
-            {
-                if (embedding is null || embedding.Length != options.EmbeddingDimensions)
-                {
-                    throw new HttpRequestException($"Ollama returned an embedding of unexpected length: {embedding?.Length ?? 0}. Expected length is {options.EmbeddingDimensions}.");
-                }
-            }
+            var embeddings = responseData.Embeddings
+                .Select(vector => new Embedding<float>(vector))
+                .ToList();
 
-            return responseData.Embeddings;
+            return new GeneratedEmbeddings<Embedding<float>>(embeddings);
         }
 
+        public object? GetService(
+            Type serviceType,
+            object? serviceKey = null)
+        {
+            if (serviceType is null)
+            {
+                throw new ArgumentNullException(nameof(serviceType));
+            }
+
+            if (serviceKey is not null)
+            {
+                return null;
+            }
+
+            if (serviceType.IsInstanceOfType(this))
+            {
+                return this;
+            }
+
+            return null;
+        }
+
+        public void Dispose()
+        {
+            // HttpClient is managed by IHttpClientFactory.
+        }
     }
 }
