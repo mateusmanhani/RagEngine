@@ -55,7 +55,7 @@ namespace RagEngine.Infrastructure
             var results = new List<RetrievalResult>();
 
             var response = await _searchClient.SearchAsync<SearchDocument>(
-                searchText: null,
+                searchText: query,
                 options: options,
                 cancellationToken: cancellationToken);
 
