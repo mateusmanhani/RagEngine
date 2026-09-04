@@ -25,7 +25,7 @@ namespace RagEngine.Infrastructure.VectorStore
                 }
             };
             var client = new CosmosClient(options.EndpointUri, new DefaultAzureCredential(), clientOptions);
-            _container = client.GetContainer(options.DatabaseName, options.ContainerName);
+            _container = client.GetContainer(options.DatabaseName, options.OllamaContainerName);
         }
 
         public async Task AddAsync(IEnumerable<Chunk> chunks, CancellationToken cancellationToken = default)

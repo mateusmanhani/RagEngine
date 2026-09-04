@@ -33,7 +33,7 @@ namespace RagEngine.Infrastructure.Embedding
                 throw new ArgumentException("At least one input is required.", nameof(values));
             }
 
-            var request = new EmbedRequest
+            var request = new OllamaEmbedRequest
             {
                 Model = _options.EmbeddingModel,
                 Input = inputs
@@ -51,7 +51,7 @@ namespace RagEngine.Infrastructure.Embedding
                 throw new HttpRequestException($"Failed to generate embeddings. Status Code: {response.StatusCode}, Response: {errorContent}");
             }
 
-            var responseData = await response.Content.ReadFromJsonAsync<EmbedResponse>(cancellationToken: cancellationToken);
+            var responseData = await response.Content.ReadFromJsonAsync<OllamaEmbedResponse>(cancellationToken: cancellationToken);
 
             if (responseData?.Embeddings is null)
             {
@@ -70,9 +70,7 @@ namespace RagEngine.Infrastructure.Embedding
             return new GeneratedEmbeddings<Embedding<float>>(embeddings);
         }
 
-        public object? GetService(
-            Type serviceType,
-            object? serviceKey = null)
+        public object? GetService(Type serviceType, object? serviceKey = null)
         {
             if (serviceType is null)
             {

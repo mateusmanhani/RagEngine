@@ -37,6 +37,7 @@ namespace RagEngine
             builder.Services.Configure<AzureSearchOptions>(builder.Configuration.GetSection("AzureSearch"));
             builder.Services.Configure<GroqOptions>(builder.Configuration.GetSection("Groq"));
             builder.Services.Configure<RagOptions>(builder.Configuration.GetSection("RagOptions"));
+            builder.Services.Configure<GeminiOptions>(builder.Configuration.GetSection("Gemini"));
 
             builder.Services.AddSingleton<SearchClient>(sp =>
             {
@@ -58,6 +59,16 @@ namespace RagEngine
                  {
                      var options = serviceProvider
                          .GetRequiredService<IOptions<OllamaOptions>>()
+                         .Value;
+
+                     httpClient.BaseAddress = new Uri(options.BaseUrl);
+                 });
+
+            builder.Services.AddHttpClient<IEmbeddingGenerator<string, Embedding<float>>, GeminiEmbeddingGenerator>(
+                 (serviceProvider, httpClient) =>
+                 {
+                     var options = serviceProvider
+                         .GetRequiredService<IOptions<GeminiOptions>>()
                          .Value;
 
                      httpClient.BaseAddress = new Uri(options.BaseUrl);

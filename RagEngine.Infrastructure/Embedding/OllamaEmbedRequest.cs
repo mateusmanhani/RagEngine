@@ -1,8 +1,8 @@
 ﻿namespace RagEngine.Infrastructure.Embedding
 {
-    public class EmbedResponse
+    public class OllamaEmbedRequest
     {
         public string Model { get; set; } = string.Empty;
-        public float[][] Embeddings { get; set; } = [];
+        public string[] Input { get; set; } = Array.Empty<string>();
     }
 }
