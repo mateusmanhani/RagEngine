@@ -4,6 +4,6 @@ namespace RagEngine.Application.Interfaces
 {
     public interface IRetriever
     {
-        Task<IEnumerable<RetrievalResult>> SearchAsync(string query, int topK, CancellationToken cancellationToken = default);
+        Task<IEnumerable<DocumentRetrievalResult>> SearchAsync(string query, int topK, CancellationToken cancellationToken = default);
     }
 }

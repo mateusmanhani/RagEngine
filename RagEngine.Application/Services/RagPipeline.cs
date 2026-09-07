@@ -57,7 +57,7 @@ namespace RagEngine.Application.Services
                         {Content}
                         """,
                         chunk.SimilarityScore,
-                        chunk.Chunk.Content);
+                        chunk.Content);
                 }
 
                 var promptStopwatch = Stopwatch.StartNew();
@@ -81,7 +81,7 @@ namespace RagEngine.Application.Services
             }
         }
 
-        private static string BuildPrompt(string query, IEnumerable<RetrievalResult> chunks)
+        private static string BuildPrompt(string query, IEnumerable<DocumentRetrievalResult> chunks)
         {
             var builder = new StringBuilder();
 
@@ -98,7 +98,7 @@ namespace RagEngine.Application.Services
             foreach (var result in chunks)
             {
                 builder.AppendLine("---");
-                builder.AppendLine(result.Chunk.Content);
+                builder.AppendLine(result.Content);
             }
 
             builder.AppendLine("---");

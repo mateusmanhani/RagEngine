@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using RagEngine.Application.Services;
+using RagEngine.Application.Interfaces;
+using RagEngine.Infrastructure.Cosmos;
 
 namespace RagEngine.API.Controllers
 {
@@ -8,9 +9,9 @@ namespace RagEngine.API.Controllers
     public class RetrievalController : ControllerBase
     {
         private readonly ILogger<RetrievalController> _logger;
-        private readonly CosmosRetriever _retrievalPipeline;
+        private readonly IRetriever _retrievalPipeline;
 
-        public RetrievalController(ILogger<RetrievalController> logger, CosmosRetriever retrievalPipeline)
+        public RetrievalController(ILogger<RetrievalController> logger, IRetriever retrievalPipeline)
         {
             _logger = logger;
             _retrievalPipeline = retrievalPipeline;

@@ -8,12 +8,12 @@ namespace RagEngine.API.Controllers
     public class IngestionController : ControllerBase
     {
         private readonly ILogger<IngestionController> _logger;
-        private readonly IngestionPipeline _ingestionPipeline;
+        private readonly DocumentIngestionService _ingestionService;
 
-        public IngestionController(ILogger<IngestionController> logger, IngestionPipeline ingestionPipeline)
+        public IngestionController(ILogger<IngestionController> logger, DocumentIngestionService ingestionService)
         {
             _logger = logger;
-            _ingestionPipeline = ingestionPipeline;
+            _ingestionService = ingestionService;
         }
 
         [HttpPost("folder")]
@@ -26,7 +26,7 @@ namespace RagEngine.API.Controllers
 
             try
             {
-                var result = await _ingestionPipeline.IngestFolderAsync(folderPath, cancellationToken);
+                var result = await _ingestionService.IngestFolderAsync(folderPath, cancellationToken);
                 return Ok(result);
             }
             catch (Exception ex)

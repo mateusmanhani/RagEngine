@@ -52,14 +52,14 @@ namespace RagEngine.Infrastructure.Embedding
                     },
                     EmbedContentConfig = new GeminiEmbedContentConfig
                     {
-                        OutputDimensionality = _options.EmbeddingDimenstions
+                        OutputDimensionality = _options.EmbeddingDimensions
                     }
                 }).ToArray()
             };
 
             var endpoint =$"v1beta/models/{_options.EmbeddingModel}:batchEmbedContents";
 
-            var response = await _httpClient.PostAsJsonAsync(
+            using var response = await _httpClient.PostAsJsonAsync(
                 endpoint,
                 batchRequest,
                 cancellationToken
