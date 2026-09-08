@@ -12,6 +12,7 @@ using RagEngine.Application.Services;
 using RagEngine.Infrastructure.Config;
 using RagEngine.Infrastructure.Cosmos;
 using RagEngine.Infrastructure.Embedding;
+using RagEngine.Infrastructure.Embedding.Ollama;
 using RagEngine.Infrastructure.Synthesis;
 using Scalar.AspNetCore;
 using Serilog;
@@ -67,6 +68,9 @@ namespace RagEngine
             builder.Services.Configure<GeminiOptions>(
                 builder.Configuration.GetSection("Gemini"));
 
+            builder.Services.Configure<OllamaOptions>(
+                builder.Configuration.GetSection("Ollama"));
+
 
             // ============================================================
             // AZURE AI SEARCH
@@ -94,13 +98,23 @@ namespace RagEngine
             // AI - EMBEDDINGS
             // ============================================================
 
-            builder.Services.AddHttpClient<IEmbeddingGenerator<string, Embedding<float>>,GeminiEmbeddingGenerator>(
-                (serviceProvider, httpClient) =>
-                {
-                    var options = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
-                    httpClient.BaseAddress = new Uri(options.BaseUrl);
-                    httpClient.DefaultRequestHeaders.Add("x-goog-api-key", options.ApiKey);
-                });
+            //builder.Services.AddHttpClient<IEmbeddingGenerator<string, Embedding<float>>,GeminiEmbeddingGenerator>(
+            //    (serviceProvider, httpClient) =>
+            //    {
+            //        var options = serviceProvider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+            //        httpClient.BaseAddress = new Uri(options.BaseUrl);
+            //        httpClient.DefaultRequestHeaders.Add("x-goog-api-key", options.ApiKey);
+            //    });
+
+            builder.Services.AddHttpClient<IEmbeddingGenerator<string, Embedding<float>>, OllamaEmbeddingGenerator>(
+                 (serviceProvider, httpClient) =>
+                 {
+                     var options = serviceProvider
+                         .GetRequiredService<IOptions<OllamaOptions>>()
+                         .Value;
+
+                     httpClient.BaseAddress = new Uri(options.BaseUrl);
+                 });
 
 
             // ============================================================
@@ -227,9 +241,9 @@ namespace RagEngine
                         serviceProvider
                             .GetRequiredService<VectorStore>();
 
-                    var geminiOptions =
+                    var ollamaOptions =
                         serviceProvider
-                            .GetRequiredService<IOptions<GeminiOptions>>()
+                            .GetRequiredService<IOptions<OllamaOptions>>()
                             .Value;
 
                     var cosmosOptions =
@@ -239,7 +253,7 @@ namespace RagEngine
 
                     return new VectorStoreWriter<string>(
                         vectorStore,
-                        dimensionCount: geminiOptions.EmbeddingDimensions,
+                        dimensionCount: ollamaOptions.EmbeddingDimensions,
                         options: new VectorStoreWriterOptions
                             {
                                 CollectionName = cosmosOptions.ContainerName,
