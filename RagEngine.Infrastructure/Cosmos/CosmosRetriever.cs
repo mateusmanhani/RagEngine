@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using RagEngine.Application.DTO;
 using RagEngine.Application.Interfaces;
+using RagEngine.Infrastructure.Config;
 using System.Diagnostics;
 
 namespace RagEngine.Infrastructure.Cosmos
@@ -22,14 +23,16 @@ namespace RagEngine.Infrastructure.Cosmos
             ILogger<CosmosRetriever> logger,
             IEmbeddingGenerator<string, Embedding<float>> embeddingGenerator,
             VectorStore vectorStore,
-            IOptions<CosmosDbConfig> options)
+            IOptions<CosmosDbConfig> options,
+            IOptions<OllamaOptions> ollamaOptions)
         {
             _logger = logger;
             _embeddingGenerator = embeddingGenerator;
 
             _collection = vectorStore.GetDynamicCollection(
                 options.Value.ContainerName,
-                CreateCollectionDefinition());
+                CreateCollectionDefinition(
+                    ollamaOptions.Value.EmbeddingDimensions));
         }
 
         public async Task<IEnumerable<DocumentRetrievalResult>> SearchAsync(
@@ -109,7 +112,8 @@ namespace RagEngine.Infrastructure.Cosmos
 
         // -------- Vector Store Schema --------
 
-        private static VectorStoreCollectionDefinition CreateCollectionDefinition()
+        private static VectorStoreCollectionDefinition CreateCollectionDefinition(
+            int embeddingDimensions)
         {
             return new VectorStoreCollectionDefinition
             {
@@ -117,12 +121,12 @@ namespace RagEngine.Infrastructure.Cosmos
                 {
                     new VectorStoreKeyProperty(
                         "key",
-                        typeof(Guid)),
+                        typeof(string)),
 
                     new VectorStoreVectorProperty(
                         "embedding",
-                        typeof(string),
-                        dimensions: 768)
+                        typeof(ReadOnlyMemory<float>),
+                        dimensions: embeddingDimensions)
                     {
                         DistanceFunction =
                             DistanceFunction.CosineSimilarity
