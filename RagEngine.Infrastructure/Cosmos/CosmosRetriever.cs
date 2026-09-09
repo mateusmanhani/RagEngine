@@ -13,11 +13,7 @@ namespace RagEngine.Infrastructure.Cosmos
     {
         private readonly ILogger<CosmosRetriever> _logger;
         private readonly IEmbeddingGenerator<string, Embedding<float>> _embeddingGenerator;
-
-        private readonly VectorStoreCollection<
-            object,
-            Dictionary<string, object?>
-        > _collection;
+        private readonly VectorStoreCollection<object, Dictionary<string, object?>> _collection;
 
         public CosmosRetriever(
             ILogger<CosmosRetriever> logger,

@@ -2,102 +2,136 @@
 
 A learning-focused **Retrieval-Augmented Generation (RAG) proof of concept** built with **C# / .NET 10**.
 
-RagEngine explores how a RAG application works end-to-end: from document ingestion and chunking to embeddings, vector search, context retrieval, and LLM-generated answers.
+RagEngine explores RAG end-to-end: document parsing, chunking, embeddings, vector storage, similarity retrieval, context construction, and LLM answer generation.
 
-The goal is not just to use AI tools, but to understand the architecture and trade-offs behind them.
+The project also includes an alternative **Azure AI Search** implementation so the trade-offs between a custom RAG pipeline and a managed Azure retrieval pipeline can be explored.
 
 ## Architecture
 
+### Cosmos DB RAG pipeline
+
 ```text
-Documents (.txt, .md)
-        ↓
-Document Loading
-        ↓
-Chunking
-        ↓
-Embedding Generation
-        ↓
-Vector Storage
-        ↓
-Query
-        ↓
-Vector Similarity Search
-        ↓
-Relevant Context
-        ↓
-LLM Answer Generation
+PDF
+ ↓
+MarkItDown
+ ↓
+Microsoft.Extensions.DataIngestion
+ ↓
+IngestionChunker + tokenizer
+(HeaderChunker)
+ ↓
+IngestionChunkWriter
+ ↓
+IEmbeddingGenerator
+ ├── Ollama
+ └── Gemini API
+ ↓
+VectorStore / VectorStoreWriter
+ ↓
+Azure Cosmos DB
+ ↓
+CosmosRetriever
+(VectorStoreCollection similarity search)
+ ↓
+Retrieved context
+ ↓
+Answer Generator
+(GROQ)
+ ↓
+Answer
 ```
+
+The ingestion flow uses Microsoft's **DataIngestion** abstractions rather than a custom ingestion pipeline implementation.
+
+### Azure AI Search alternative
+
+```text
+PDF
+ ↓
+Azure Blob Storage
+ ↓
+Azure AI Search
+ ├── Chunking
+ ├── Embedding/indexing
+ └── Retrieval
+ ↓
+Similarity search
+ ↓
+Answer Generator
+(GROQ)
+ ↓
+Answer
+```
+
+In this approach, Azure AI Search manages document processing, chunking, indexing, and retrieval. RagEngine delegates answer synthesis to the same answer-generation component used by the Cosmos-based pipeline.
 
 ## Tech Stack
 
-* **C# / .NET 10**
-* **ASP.NET Core Web API**
-* **Semantic Kernel** — document chunking
-* **Ollama** — local embeddings and LLM inference
+- **C# / .NET 10**
+- **ASP.NET Core Web API**
+- **Microsoft.Extensions.VectorData.Abstractions** — vector store abstractions
+- **Microsoft.Extensions.DataIngestion** — document ingestion and chunking pipeline
+- **MarkItDown** — PDF-to-markdown/document extraction
+- **Microsoft.Extensions.AI** — `IEmbeddingGenerator` abstraction
+- **Ollama** — local embedding generation
+- **Gemini API** — alternative cloud embedding provider
+- **Azure Cosmos DB for NoSQL** — vector storage and similarity search
+- **Azure AI Search** — alternative managed search/retrieval implementation
+- **GROQ** — answer generation
+- **Scalar** — interactive API documentation
+- **Options Pattern** — configurable RAG settings such as `TopK`
 
-  * `qwen3-embedding:0.6b`
-  * `qwen3:4b`
-* **Azure Cosmos DB for NoSQL** — vector storage and similarity search
-* **Scalar** — interactive API documentation
-* **Options Pattern** — configurable RAG settings such as `TopK`
+## Key Features
 
-## Features
-
-* Document ingestion from `.txt` and `.md` files
-* Document chunking with Semantic Kernel
-* Batch embedding generation
-* Vector similarity search
-* Configurable `TopK` retrieval
-* Retrieval-Augmented Generation pipeline
-* LLM answer generation using retrieved document context
-* Diagnostics endpoints for inspecting stored chunks
-* Clean architecture with interchangeable infrastructure components
+- PDF document ingestion using MarkItDown
+- Microsoft DataIngestion pipeline for document processing
+- Header-aware chunking using Microsoft's ingestion chunker and tokenizer
+- Chunk writing through `IngestionChunkWriter`
+- Embedding generation through Microsoft's `IEmbeddingGenerator`
+- Interchangeable Ollama and Gemini embedding providers
+- Vector storage through `VectorStore` / `VectorStoreWriter`
+- Azure Cosmos DB similarity search through `VectorStoreCollection`
+- Configurable `TopK` retrieval
+- GROQ-based answer generation using retrieved context
+- Alternative Azure AI Search pipeline with managed chunking, indexing, and retrieval
+- Diagnostics for inspecting retrieval/chunking behaviour
 
 ## Project Structure
 
+The project uses a modular application structure with abstractions around external infrastructure.
+
 ```text
-RagEngine.API
-    API controllers and application configuration
-
-RagEngine.Application
-    Application services, interfaces, and RAG pipelines
-
-RagEngine.Domain
-    Core domain entities
-
-RagEngine.Infrastructure
-    Embeddings, chunking, vector stores, and external integrations
-
-Tests
-    Unit and integration tests
+RagEngine
+├── API
+│   └── Controllers and API configuration
+├── Application
+│   └── RAG, ingestion, retrieval, and answer-generation logic
+├── Domain
+│   └── Core models
+└── Infrastructure
+    └── Data ingestion, embeddings, vector stores,
+        Azure AI Search, Ollama, Gemini, and GROQ integrations
 ```
 
-The project uses abstractions at infrastructure boundaries to make components replaceable.
-
-For example:
-
-* `IEmbeddingGenerator` — Ollama today, another embedding provider later
-* `IVectorStore` — different vector storage implementations
-* LLM providers can be changed independently from retrieval
+The exact structure may evolve as the project develops.
 
 ## Running Locally
 
 ### Prerequisites
 
-* .NET 10 SDK
-* [Ollama](https://ollama.com/) running locally
+- .NET 10 SDK
+- Ollama, if using the local embedding provider
+- Azure Cosmos DB, if using the Cosmos vector pipeline
+- Azure AI Search and Blob Storage, if using the Azure AI Search pipeline
+- Gemini API credentials, if using Gemini embeddings
+- GROQ API credentials for answer generation
 
-Pull the required models:
-
-```powershell
-ollama pull qwen3-embedding:0.6b
-ollama pull qwen3:4b
-```
+Configuration and secrets should be supplied through standard .NET configuration mechanisms and should not be committed to source control.
 
 ### Run the API
 
 ```powershell
-dotnet run --project RagEngine.API
+dotnet run
 ```
 
 Open the API documentation at:
@@ -106,82 +140,73 @@ Open the API documentation at:
 /scalar
 ```
 
-## Example Workflow
+## Example RAG Workflow
 
-### 1. Ingest documents
+### Cosmos DB pipeline
 
-```http
-POST /api/ingestion/folder?folderPath=C:\path\to\docs
-```
+1. PDF is parsed with MarkItDown.
+2. Microsoft's DataIngestion pipeline processes the document.
+3. The document is split into header-aware chunks using a tokenizer.
+4. Chunks are written using `IngestionChunkWriter`.
+5. Embeddings are generated through `IEmbeddingGenerator`.
+6. Chunks and vectors are written to the vector store.
+7. `CosmosRetriever` performs vector similarity search.
+8. Retrieved chunks are passed to the GROQ-based Answer Generator.
+9. The generated answer is returned to the user.
 
-The ingestion pipeline:
+### Azure AI Search pipeline
 
-1. Loads supported documents
-2. Splits them into chunks
-3. Generates embeddings
-4. Stores chunks and vectors
-
-### 2. Ask a question
-
-```http
-GET /api/rag?query=Your question here
-```
-
-The RAG pipeline:
-
-1. Generates an embedding for the query
-2. Retrieves the most relevant document chunks
-3. Builds contextual information for the LLM
-4. Generates an answer based on the retrieved context
-
-The number of retrieved chunks is configurable through `appsettings.json`:
-
-```json
-"RagOptions": {
-  "TopK": 5
-}
-```
+1. Documents are uploaded to Blob Storage.
+2. Azure AI Search processes and indexes the documents.
+3. Azure AI Search performs chunking, embedding/indexing, and retrieval.
+4. Relevant results are returned to RagEngine.
+5. The same Answer Generator synthesizes the final answer using the retrieved context.
 
 ## Current Status
 
-* ✅ Document ingestion
-* ✅ Semantic chunking
-* ✅ Local embedding generation with Ollama
-* ✅ Batch embedding generation
-* ✅ Vector similarity search
-* ✅ Azure Cosmos DB vector store integration
-* ✅ Retrieval pipeline
-* ✅ Retrieval-Augmented Generation
-* ✅ LLM answer generation
-* ✅ Configurable retrieval settings
-* 🚧 Hybrid search
-* 🚧 Performance optimisation and model/provider evaluation
-* 🚧 Prompt injection and additional security protections
+- ✅ PDF document extraction with MarkItDown
+- ✅ Microsoft DataIngestion pipeline
+- ✅ Header-aware chunking with tokenizer
+- ✅ `IngestionChunkWriter`
+- ✅ `IEmbeddingGenerator` abstraction
+- ✅ Ollama embeddings
+- ✅ Gemini API embeddings
+- ✅ Cosmos DB vector storage
+- ✅ `VectorStore` / `VectorStoreWriter`
+- ✅ Cosmos similarity retrieval with `VectorStoreCollection`
+- ✅ GROQ answer generation
+- ✅ Azure AI Search alternative pipeline
+- ✅ Managed Azure AI Search chunking/indexing/retrieval tested
+- 🚧 Retrieval and model/provider evaluation
+- 🚧 Performance optimisation
+- 🚧 Additional prompt-injection and security protections
 
 ## Why This Project?
 
-This project is intentionally built incrementally.
+RagEngine is intentionally built to understand the architecture behind RAG rather than hiding it behind a single framework.
 
-Rather than using a framework to hide the entire RAG pipeline, each stage is implemented and explored individually to better understand:
+The project is used to explore:
 
-* How document chunking affects retrieval
-* How embeddings and semantic search work
-* How vector databases perform similarity search
-* How `TopK` affects context quality
-* How retrieval impacts LLM responses
-* Where performance bottlenecks occur
-* The trade-offs between local and cloud-based models
+- How document parsing and chunking affect retrieval quality
+- How tokenizers and chunking strategies affect context
+- How embedding providers can be swapped through standard Microsoft abstractions
+- How vector stores perform similarity search
+- How managed search services compare with application-controlled RAG pipelines
+- How retrieval quality affects generated answers
+- The trade-offs between local, cloud, and managed Azure services
+- Performance, cost, complexity, and maintainability
 
 ## What's Next?
 
-The project will continue evolving as new concepts are explored, including:
+The project will continue evolving around:
 
-* Hybrid search
-* Retrieval quality improvements
-* Performance optimisation
-* Alternative LLM providers
-* Improved prompt and context handling
-* Security and prompt-injection protections
+- Retrieval quality evaluation
+- Chunking and embedding experiments
+- Performance optimisation
+- Provider/model comparison
+- Prompt and context improvements
+- Security and prompt-injection protections
+- Further comparison between Cosmos DB and Azure AI Search
 
 ---
 
