@@ -93,7 +93,8 @@ namespace RagEngine.Infrastructure.Cosmos
                     new DocumentRetrievalResult(
                         DocumentId: documentId,
                         Content: content,
-                        SimilarityScore: result.Score));
+                        SimilarityScore: result.Score,
+                        ParentDocumentId: documentId));
             }
 
             searchStopwatch.Stop();
