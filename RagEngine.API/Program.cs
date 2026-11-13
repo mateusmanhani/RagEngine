@@ -93,6 +93,10 @@ namespace RagEngine
 
             builder.Services.AddSingleton<IWebContentCleaner, WebContentCleaner>();
 
+            builder.Services.AddScoped<
+                IWebContentPreviewService,
+                WebContentPreviewService>();
+
 
             // ============================================================
             // AZURE AI SEARCH

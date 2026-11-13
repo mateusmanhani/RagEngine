@@ -1,4 +1,4 @@
-﻿using RagEngine.Application.DTO;
+﻿using RagEngine.Application.Web;
 
 namespace RagEngine.Application.Interfaces
 {

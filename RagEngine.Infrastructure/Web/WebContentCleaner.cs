@@ -7,40 +7,22 @@ namespace RagEngine.Infrastructure.Web;
 
 public sealed class WebContentCleaner : IWebContentCleaner
 {
-    private static readonly HashSet<string> BoilerplateLines =
-        new(StringComparer.OrdinalIgnoreCase)
-        {
-            "Skip to main content",
-            "Skip to content",
-            "Home",
-            "Menu",
-            "Search",
-            "Sign in",
-            "Sign in to ROS",
-            "Log in",
-            "Log in to ROS",
-            "English",
-            "Gaeilge",
-            "Accessibility",
-            "Privacy",
-            "Privacy statement",
-            "Cookie policy",
-            "Cookie settings",
-            "Manage cookies",
-            "Back to top"
-        };
+    private static readonly Regex ArticleNavigation = new(
+        @"^\s*\[(?:Next|Previous):",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    private static readonly string[] BoilerplatePhrases =
+    private static readonly Regex RelatedTopics = new(
+        @"^\s*[-*]\s*\[Related topics\]",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex Published = new(
+        @"^\s*_Published:",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly string[] FooterMarkers =
     [
-        "accept all cookies",
-        "reject optional cookies",
-        "manage cookie preferences",
-        "we use cookies to",
-        "this website uses cookies",
-        "your browser is out of date",
-        "your browser is not supported",
-        "please update your browser",
-        "upgrade your browser"
+        "[Back to homepage]",
+        "[Back to top]"
     ];
 
     public string Clean(string markdown)
@@ -50,57 +32,46 @@ public sealed class WebContentCleaner : IWebContentCleaner
         if (string.IsNullOrWhiteSpace(markdown))
             return string.Empty;
 
-        var normalized = markdown
+        var lines = markdown
             .Replace("\r\n", "\n")
             .Replace('\r', '\n')
-            .TrimStart('\uFEFF');
+            .TrimStart('\uFEFF')
+            .Split('\n');
+
+        // Locate the first H1: the article starts here.
+        var start = Array.FindIndex(
+            lines,
+            line => Regex.IsMatch(line.Trim(), @"^#\s+\S"));
+
+        if (start < 0)
+            return Normalize(markdown);
 
         var output = new StringBuilder();
-        var previousLine = string.Empty;
 
-        foreach (var rawLine in normalized.Split('\n'))
+        for (var i = start; i < lines.Length; i++)
         {
-            var line = rawLine.Trim();
+            var line = lines[i].Trim();
+
+            // Stop before page-level navigation and footer content.
+            if (ArticleNavigation.IsMatch(line) ||
+                RelatedTopics.IsMatch(line) ||
+                Published.IsMatch(line) ||
+                FooterMarkers.Any(marker =>
+                    line.StartsWith(marker, StringComparison.OrdinalIgnoreCase)))
+            {
+                break;
+            }
 
             if (string.IsNullOrWhiteSpace(line))
             {
                 AppendBlankLine(output);
-                previousLine = string.Empty;
                 continue;
             }
 
-            if (IsBoilerplate(line))
-                continue;
-
-            // Remove consecutive duplicate lines, which can occur in
-            // scraped navigation and repeated page chrome.
-            if (string.Equals(line, previousLine, StringComparison.Ordinal))
-                continue;
-
             output.AppendLine(line);
-            previousLine = line;
         }
 
-        return NormalizeBlankLines(output.ToString()).Trim();
-    }
-
-    private static bool IsBoilerplate(string line)
-    {
-        // Exact matches are deliberately used for navigation labels.
-        if (BoilerplateLines.Contains(line))
-            return true;
-
-        var normalized = Regex.Replace(line, @"\s+", " ").Trim();
-        var lower = normalized.ToLowerInvariant();
-
-        // Remove standalone cookie/browser notices, not paragraphs
-        // that discuss cookies or browser requirements as actual guidance.
-        if (BoilerplatePhrases.Any(lower.Contains))
-        {
-            return line.Length < 250;
-        }
-
-        return false;
+        return Normalize(output.ToString()).Trim();
     }
 
     private static void AppendBlankLine(StringBuilder output)
@@ -111,15 +82,16 @@ public sealed class WebContentCleaner : IWebContentCleaner
         if (output.Length >= 2 &&
             output[^1] == '\n' &&
             output[^2] == '\n')
-        {
             return;
-        }
 
         output.AppendLine();
     }
 
-    private static string NormalizeBlankLines(string content)
+    private static string Normalize(string content)
     {
-        return Regex.Replace(content, @"\n{3,}", "\n\n");
+        return Regex.Replace(
+            content.Replace("\r\n", "\n").Replace('\r', '\n'),
+            @"\n{3,}",
+            "\n\n");
     }
 }

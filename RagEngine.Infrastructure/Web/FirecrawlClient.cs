@@ -1,5 +1,6 @@
-﻿using RagEngine.Application.DTO;
+﻿using Microsoft.Extensions.Options;
 using RagEngine.Application.Interfaces;
+using RagEngine.Application.Web;
 using RagEngine.Infrastructure.Config;
 using System.Diagnostics;
 using System.Net.Http.Json;
@@ -12,10 +13,10 @@ namespace RagEngine.Infrastructure.Web
         private readonly HttpClient _httpClient;
         private readonly FirecrawlOptions _options;
 
-        public FirecrawlClient(HttpClient httpClient, FirecrawlOptions options)
+        public FirecrawlClient(HttpClient httpClient, IOptions<FirecrawlOptions> options)
         {
             _httpClient = httpClient;
-            _options = options;
+            _options = options.Value;
         }
 
         public async Task<IReadOnlyCollection<CrawledPage>> CrawlAsync(string url, CancellationToken cancellationToken = default)

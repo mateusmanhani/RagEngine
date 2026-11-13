@@ -1,4 +1,4 @@
-﻿namespace RagEngine.Application.DTO
+﻿namespace RagEngine.Application.Web
 {
     public sealed record CrawledPage(
     string Url,
