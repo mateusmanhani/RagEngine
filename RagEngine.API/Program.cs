@@ -73,7 +73,7 @@ namespace RagEngine
                 builder.Configuration.GetSection("Ollama"));
 
             // ============================================================
-            // Crawler
+            // Web Ingestion
             // ============================================================
             builder.Services.Configure<FirecrawlOptions>(
                 builder.Configuration.GetSection(FirecrawlOptions.SectionName));
@@ -90,6 +90,8 @@ namespace RagEngine
                     httpClient.DefaultRequestHeaders.Authorization =
                         new AuthenticationHeaderValue("Bearer", options.ApiKey);
                 });
+
+            builder.Services.AddSingleton<IWebContentCleaner, WebContentCleaner>();
 
 
             // ============================================================

@@ -2,6 +2,6 @@
 {
     public interface IWebContentCleaner
     {
-        string Clean (string markdownContent);
+        string Clean (string markdown);
     }
 }
