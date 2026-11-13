@@ -14,6 +14,7 @@ using RagEngine.Infrastructure.Cosmos;
 using RagEngine.Infrastructure.Embedding;
 using RagEngine.Infrastructure.Embedding.Ollama;
 using RagEngine.Infrastructure.Synthesis;
+using RagEngine.Infrastructure.Web;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Net.Http.Headers;
@@ -70,6 +71,25 @@ namespace RagEngine
 
             builder.Services.Configure<OllamaOptions>(
                 builder.Configuration.GetSection("Ollama"));
+
+            // ============================================================
+            // Crawler
+            // ============================================================
+            builder.Services.Configure<FirecrawlOptions>(
+                builder.Configuration.GetSection(FirecrawlOptions.SectionName));
+
+            builder.Services.AddHttpClient<IFirecrawlClient, FirecrawlClient>(
+                (serviceProvider, httpClient) =>
+                {
+                    var options = serviceProvider
+                        .GetRequiredService<IOptions<FirecrawlOptions>>()
+                        .Value;
+
+                    httpClient.BaseAddress = new Uri(options.BaseUrl);
+
+                    httpClient.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", options.ApiKey);
+                });
 
 
             // ============================================================
